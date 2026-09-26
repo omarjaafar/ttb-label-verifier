@@ -175,3 +175,8 @@ Format: **decision**, then the alternatives considered, why this one, and the tr
 ### D14: Capture the warning heading verbatim in its own field (2026-09-26)
 - **Found:** reviewing a screenshot showed the model "correcting" a title-case heading to caps inside the full-warning transcription (6/8 runs). The caps verdict was still right via the separate boolean, but the display contradicted it.
 - **Fix:** a `heading_as_printed` schema field with an explicit title-case example, asked *before* the booleans. The heading rule fails if either the transcription or the visual judgment says "not all caps." Result: 10/10 verbatim. Full eval is still 11/11, median 4.2s.
+
+### D15: In-memory rate limiting on the public demo (2026-09-26)
+- **Why:** the demo URL is unauthenticated (so reviewers can test it), which means anyone could spend the API budget. Limits: 60 checks/min per client IP and 1,000/day globally (~$6/day worst case). The client IP is taken from the ingress's forwarded headers via `uvicorn --proxy-headers`.
+- **Batch interplay:** batch mode honors `Retry-After` on 429 and waits instead of erroring. Verified with the limit set to 4/min: 11 labels all completed correctly in ~2 min.
+- **Tradeoff:** state is per replica and resets on restart. Production would use gateway-level limits (APIM/Front Door) behind SSO.

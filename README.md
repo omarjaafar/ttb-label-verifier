@@ -117,6 +117,8 @@ docker run -p 8000:8000 --env-file .env ttb-label-verifier
 | `CLAUDE_THINKING` | `disabled` | `adaptive` enables model reasoning (slower) |
 | `EXTRACTION_TIMEOUT_S` | `15` | Per-request ceiling for the model call |
 | `MAX_UPLOAD_MB` | `15` | Upload size limit |
+| `RATE_LIMIT_PER_MINUTE` | `60` | Checks per minute per visitor (batch mode waits and retries automatically) |
+| `RATE_LIMIT_PER_DAY` | `1000` | Checks per day across all visitors, to cap API spend on the public demo |
 
 **Batch CSV format:** one row per label. Required columns: `filename`, `brand_name`, `class_type`, `net_contents`. Optional: `beverage_type` (`spirits`/`wine`/`beer`, default spirits), `alcohol_content`, `bottler_name_address`, `country_of_origin`. The `filename` must match the uploaded image's file name. [Template](app/static/batch_template.csv).
 
@@ -127,14 +129,14 @@ docker run -p 8000:8000 --env-file .env ttb-label-verifier
 ## Testing and evaluation
 
 ```bash
-pytest                                   # 63 unit + API tests, no network or API key needed
+pytest                                   # 67 unit + API tests, no network or API key needed
 python samples/generate_samples.py       # regenerate the synthetic test labels
 python samples/run_eval.py               # run all sample labels through the real model; accuracy + latency
 python samples/ui_smoke_test.py URL      # drive the real UI in a headless browser (single + batch)
 ```
 (`run_eval.py` needs an API key. The browser test needs Edge installed or `playwright install chromium`.)
 
-- **Unit tests** cover the judgment logic: normalization, ABV/proof math, unit conversion, bottler prefixes, country aliases, every warning rule, and API error handling (fake extractor, no network).
+- **Unit tests** cover the judgment logic: normalization, ABV/proof math, unit conversion, bottler prefixes, country aliases, every warning rule, rate limiting, and API error handling (fake extractor, no network).
 - **Sample labels** ([`samples/labels/`](samples/labels/)): 11 synthetic labels, each built to exercise one rule: a correct label, case-only brand difference, wrong ABV, title-case warning, non-bold heading, reworded warning, wrong volume, imported wine with metric units, an angled and glare-affected "phone photo", a missing warning, and a beer with no ABV.
 - **Latest live results:** **11/11 correct**, median **4.2s**, max **4.6s** (all 11 running at once). Batch of 11 through the deployed UI: ~17s.
 
@@ -200,7 +202,7 @@ The full decision log with alternatives is in [CLAUDE.md](CLAUDE.md#decisions-lo
 
 - **Not a full TTB rule engine.** It checks the fields in the brief, not every regulation (e.g. type size, placement, "same field of vision", wine appellation or vintage, sulfite or allergen statements, standards of identity).
 - **External AI API in the prototype.** The default mode calls Anthropic's API. For production inside Treasury's network, this would route through an approved endpoint (e.g. Claude through Microsoft Foundry on Azure) or use the offline OCR mode.
-- **No authentication on the demo URL.** It's intentionally open so reviewers can test it. Production would sit behind Treasury SSO (Entra ID) and add request logging and an audit trail.
+- **No authentication on the demo URL.** It's intentionally open so reviewers can test it, and protected by rate limits instead (60 checks/min per visitor, 1,000/day total). The limits are kept in memory per server instance. Production would sit behind Treasury SSO (Entra ID), with shared rate limiting at the gateway (e.g. Azure API Management) plus request logging and an audit trail.
 - **Batch throughput** is capped by API rate limits (~50 requests/min at entry tier). For very large overnight runs, the Message Batches API (asynchronous, lower cost) would be the natural fit.
 - **Offline OCR mode** is less accurate: it can't verify bold type and may misread small text, so those checks return *Needs review*.
 - **Accuracy is measured on 11 synthetic labels.** That validates the logic end to end, but it isn't a substitute for testing on real label photos.
@@ -212,6 +214,7 @@ The full decision log with alternatives is in [CLAUDE.md](CLAUDE.md#decisions-lo
 ```
 app/
   main.py                 FastAPI routes (/, /api/verify, /health)
+  ratelimit.py            per-visitor and daily limits for the public demo
   config.py               environment settings
   models.py               request/response and extraction data shapes
   imaging.py              upload validation, auto-rotate, downscale

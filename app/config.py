@@ -12,3 +12,7 @@ CLAUDE_THINKING = os.getenv("CLAUDE_THINKING", "disabled").lower()
 # Hard ceiling per model call; Sarah's bar is ~5s, so fail fast rather than hang.
 EXTRACTION_TIMEOUT_S = float(os.getenv("EXTRACTION_TIMEOUT_S", "15"))
 MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_MB", "15")) * 1024 * 1024
+# Public demo protection. 60/min comfortably covers batch mode (3 concurrent at ~4s = ~45/min).
+RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
+# Global cap on label checks per day (~$6/day worst case at current model pricing).
+RATE_LIMIT_PER_DAY = int(os.getenv("RATE_LIMIT_PER_DAY", "1000"))

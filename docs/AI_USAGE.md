@@ -54,7 +54,7 @@ Each problem below was caught by a verification step, not by assuming the output
 
 ## How the output was verified
 
-- **63 unit and API tests** on the judging logic and error handling. They run without network access.
+- **67 unit and API tests** on the judging logic and error handling. They run without network access.
 - **Live evaluation:** 11 synthetic labels, each targeting one rule, run through the real model. Currently **11/11 correct**, median **4.2s**.
 - **Headless-browser tests** of the real UI (single label and batch), locally and against the deployed URL.
 - **Screenshots reviewed by eye** at each UI milestone. That's how issues 3 and 4 were found.

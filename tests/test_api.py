@@ -77,6 +77,18 @@ def test_non_image_rejected(client):
     assert "JPG or PNG" in r.json()["detail"]
 
 
+def test_rate_limited_returns_429_with_retry_after(client, monkeypatch):
+    from app.ratelimit import RateLimiter
+
+    monkeypatch.setattr(main, "limiter", RateLimiter(per_client_per_minute=2, global_per_day=100))
+    assert post(client).status_code == 200
+    assert post(client).status_code == 200
+    r = post(client)
+    assert r.status_code == 429
+    assert int(r.headers["Retry-After"]) > 0
+    assert "wait a moment" in r.json()["detail"]
+
+
 def test_extraction_error_is_friendly(monkeypatch):
     monkeypatch.setattr(main, "extractor_for", lambda name: FakeExtractor(error=ExtractionError("AI is down.")))
     r = post(TestClient(main.app))

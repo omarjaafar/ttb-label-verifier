@@ -58,6 +58,7 @@
 
   async function verifyOne(job, signal) {
     const started = performance.now();
+    let rateLimitWaits = 0;
     for (let attempt = 1; ; attempt++) {
       const fd = new FormData();
       fd.append("image", job.file);
@@ -67,6 +68,13 @@
         const body = await res.json().catch(() => ({}));
         if (res.ok) return { ...job, status: body.overall, result: body, seconds: (performance.now() - started) / 1000 };
         const detail = typeof body.detail === "string" ? body.detail : `Server error (${res.status}).`;
+        const retryAfter = Number(res.headers.get("Retry-After"));
+        // Per-minute rate limit: wait it out (doesn't count as a failed attempt). Daily cap: give up.
+        if (res.status === 429 && retryAfter > 0 && retryAfter <= 120 && rateLimitWaits++ < 10) {
+          attempt--;
+          await sleep(retryAfter * 1000);
+          continue;
+        }
         const retryable = res.status === 429 || res.status >= 500;
         if (!retryable || attempt >= MAX_ATTEMPTS) return { ...job, status: "error", error: detail };
       } catch (err) {

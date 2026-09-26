@@ -2,7 +2,7 @@ import time
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
@@ -11,6 +11,7 @@ from app import config
 from app.extraction import ExtractionError, LabelExtractor, get_extractor
 from app.imaging import ImageError, prepare_image
 from app.models import ApplicationData, BeverageType, VerificationResult
+from app.ratelimit import RateLimiter
 from app.verification.verifier import build_result
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -22,6 +23,18 @@ app = FastAPI(
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 _extractors: dict[str, LabelExtractor] = {}
+limiter = RateLimiter(config.RATE_LIMIT_PER_MINUTE, config.RATE_LIMIT_PER_DAY)
+
+
+def enforce_rate_limit(request: Request) -> None:
+    # Behind Azure's ingress, uvicorn --proxy-headers makes this the real client IP.
+    client = request.client.host if request.client else "unknown"
+    blocked = limiter.check(client)
+    if blocked:
+        reason, retry_after = blocked
+        msg = ("This demo has reached its daily limit. Please try again tomorrow." if reason == "daily"
+               else "Too many checks in a short time. Please wait a moment and try again.")
+        raise HTTPException(429, msg, headers={"Retry-After": str(retry_after)})
 
 
 def extractor_for(name: str) -> LabelExtractor:
@@ -64,6 +77,7 @@ def parse_application(beverage_type: BeverageType, **text_fields: str) -> Applic
 
 @app.post("/api/verify", response_model=VerificationResult)
 async def verify_label(
+    request: Request,
     image: Annotated[UploadFile, File(description="Photo or scan of the label")],
     brand_name: Annotated[str, Form()] = "",
     class_type: Annotated[str, Form()] = "",
@@ -78,6 +92,7 @@ async def verify_label(
         brand_name=brand_name, class_type=class_type, net_contents=net_contents, alcohol_content=alcohol_content,
         bottler_name_address=bottler_name_address, country_of_origin=country_of_origin, beverage_type=beverage_type,
     )
+    enforce_rate_limit(request)
     image_bytes, media_type = await read_upload(image)
     extractor = extractor_for(provider or config.EXTRACTION_PROVIDER)
 
