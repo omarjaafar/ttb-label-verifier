@@ -128,3 +128,24 @@ Format: **decision**, then the alternatives considered, why this one, and the tr
 
 ### D6: Prioritization (2026-09-26)
 - No hard time budget, but the order is **core single-label check → tests → deploy → batch → image-quality handling → polish**, per the spec: "a working core application with clean code is preferred over ambitious but incomplete features."
+
+### D7: One rule set for all beverage types; ABV optional for wine and beer (2026-09-26)
+- **Alternatives:** separate rule sets per type (spirits / wine / malt), or spirits only.
+- **Why:** the core checks (brand, class/type, net contents, bottler, country, government warning) apply to all three. The main difference agents run into is that alcohol content is mandatory for spirits but optional for some wine and beer (27 CFR 4.36 / 7.63). A beverage-type selector covers that without tripling the rules.
+- **Tradeoff:** type-specific rules aren't checked (e.g., wine appellation/vintage, sulfite declarations, spirits age statements). These are documented as future work.
+
+### D8: Plain HTML/CSS/JS frontend served by FastAPI (2026-09-26)
+- **Alternatives:** React/Vite SPA.
+- **Why:** one page and one form don't need a framework. No build step means one container and one deploy. Full control over accessibility (large type, 60px buttons, visible focus rings, status shown by icon + word + color, never color alone) for Sarah's "my mother could use it" bar.
+- **Tradeoff:** batch-results UI state is managed by hand. Still small enough to stay readable.
+
+### D9: "Not found" → Needs review; missing warning → Fail (2026-09-26)
+- **Why:** if the extractor can't find a brand name, it's more likely a read miss than a missing brand, so a human should check rather than the tool auto-rejecting. The government warning is the exception: presence is easy to detect reliably and it's mandatory on every label, so absence is a hard fail.
+
+### Measured: latency and accuracy on synthetic samples (2026-09-26)
+`samples/run_eval.py`, 9 labels (good, case-diff brand, wrong ABV, title-case warning, non-bold heading, reworded warning, wrong volume, imported wine with unit conversion, angled/glare photo):
+| Config | Accuracy | Latency |
+|---|---|---|
+| Opus 5, low effort, adaptive thinking | 9/9 (after bottler fix) | 4.1–5.8s single |
+| **Sonnet 5, low effort, thinking off** | **9/9** | **~3.6s single, ~4.1s with 9 concurrent** |
+| Haiku 4.5 | correct | 3.8–7.7s (inconsistent) |
