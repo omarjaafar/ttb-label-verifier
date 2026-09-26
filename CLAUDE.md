@@ -78,10 +78,7 @@ Rough pipeline:
 4. **Report:** per-field ✅ / ⚠️ / ❌, showing the label value next to the application value, with an overall verdict
 
 ### Open decisions (ask the user before building)
-- [ ] **Batch format:** multi-image upload + CSV mapping filename → fields? A ZIP? How are results shown and exported (CSV download)?
-- [ ] **Beverage types:** spirits only, or wine/beer rules as well?
 - [ ] **Image-quality handling:** preprocessing (deskew/contrast) vs. just detecting and flagging low confidence
-- [ ] **Latency budget:** how to stay under 5s (model choice, image downscaling, parallel batch processing with a progress bar)
 
 ## How we're working
 
@@ -160,3 +157,12 @@ Format: **decision**, then the alternatives considered, why this one, and the tr
 - **Why:** 300 phone photos can approach 1 GB, too much for a single request. Per-label requests reuse the tested `/api/verify` endpoint, give true progress, isolate failures (retry with backoff on 429/5xx), and keep the server **stateless**: no job store and nothing persisted (Marcus: no sensitive storage). Concurrency 3 stays under entry-tier API rate limits (~50 req/min).
 - **Measured:** 9 labels in ~11s through the UI (headless Edge test), all verdicts correct.
 - **Tradeoff:** the tab must stay open during a batch, and 300 labels take ~7 min at concurrency 3. Production would raise the rate-limit tier or concurrency; Message Batches fits overnight bulk runs.
+
+### D12: Azure Container Apps, image built locally and pushed to ACR (2026-09-26)
+- **Live URL:** https://ttb-label-verifier.jollysand-f9381f43.westus.azurecontainerapps.io
+- **Resources** (subscription "Azure for Students", region **westus**, the only US region the student policy allows): resource group `rg-ttb-label-verifier`, registry `ca99e736d0b5acr`, environment `ttb-env`, app `ttb-label-verifier` (0.5 vCPU / 1 GiB, **min 1 replica** so there's no cold start against the 5s bar, max 3).
+- **Secrets:** `ANTHROPIC_API_KEY` is stored as a Container Apps secret (`secretref:anthropic-key`) and never baked into the image (`.dockerignore` excludes `.env`). Container runs as a non-root user.
+- **Why not `az containerapp up --source`:** student subscriptions block ACR Tasks (cloud builds), so the image is built with local Docker and pushed. The environment was created as an "express" environment, which doesn't support managed-identity registry pulls, so the registry admin credential is used (stored as an app secret). In production: managed identity + Key Vault on a standard environment, ideally in Azure Government.
+- **Verified live:** health, single label (3.9s), 9-label batch in 12s through headless Edge, all verdicts correct. Round trip including upload is 4.2–5.2s.
+- **Redeploy:** `docker build -t ca99e736d0b5acr.azurecr.io/ttb-label-verifier:vN .` → `az acr login -n ca99e736d0b5acr` → `docker push …:vN` → `az containerapp update -n ttb-label-verifier -g rg-ttb-label-verifier --image …:vN`.
+- **Cost:** roughly $10–15/month (ACR Basic + one always-on replica), well within the $100 student credit. Tear down after review with `az group delete -n rg-ttb-label-verifier`.
