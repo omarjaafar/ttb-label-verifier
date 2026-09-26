@@ -78,10 +78,6 @@ Rough pipeline:
 4. **Report:** per-field ✅ / ⚠️ / ❌, showing the label value next to the application value, with an overall verdict
 
 ### Open decisions (ask the user before building)
-- [x] ~~Stack~~, ~~Extraction engine~~, ~~Hosting~~: see Decisions log
-- [ ] **Extraction engine (original notes):** cloud vision LLM (e.g., Azure OpenAI GPT-4o-class or Claude; handles bold, glare, and layout well but depends on the network) vs. local OCR (Tesseract/PaddleOCR; works offline and fits the firewall, but is weak on bold detection and bad photos) vs. **pluggable provider with a fallback** (leaning this way)
-- [ ] **Stack:** e.g., Python (FastAPI) + simple frontend, Next.js full-stack, or .NET (matches COLA, but slower to build). Choose based on the user's comfort; the user must be able to explain it in an interview
-- [ ] **Hosting:** Azure App Service / Container Apps (matches their environment) vs. Vercel/Render/Fly (faster). The URL must stay up through review
 - [ ] **Batch format:** multi-image upload + CSV mapping filename → fields? A ZIP? How are results shown and exported (CSV download)?
 - [ ] **Beverage types:** spirits only, or wine/beer rules as well?
 - [ ] **Image-quality handling:** preprocessing (deskew/contrast) vs. just detecting and flagging low confidence
@@ -105,10 +101,30 @@ The user makes the decisions and the AI does most of the implementation. The use
 - Every failure state gets a human-readable message (unreadable image, API timeout, bad CSV, wrong file type, oversized file).
 
 ## Decisions log
-_(date: decision, rationale)_
+Format: **decision**, then the alternatives considered, why this one, and the tradeoffs accepted. These become the README's "Approach & trade-offs" section.
 
-- 2026-09-26: Deterministic comparison logic; AI only for extraction. Rationale: explainable, testable, auditable.
-- 2026-09-26: Backend = Python + FastAPI. Rationale: fast to build; strong OCR/imaging ecosystem; user is comfortable with it.
-- 2026-09-26: Extraction = pluggable provider interface. Vision LLM as primary (Claude via Anthropic API for now, swappable to Azure-hosted), local OCR (Tesseract) as offline fallback. Rationale: accuracy on bold/glare from the LLM; the fallback answers Marcus's firewall concern.
-- 2026-09-26: Hosting = Azure (App Service or Container Apps). Rationale: TTB/Treasury already runs on Azure (FedRAMP); shows fit with their environment. User has prior Azure experience.
-- 2026-09-26: No hard time budget; still prioritize core → deploy → batch → polish.
+### D1: AI extracts, deterministic code judges (2026-09-26)
+- **Alternatives:** ask a vision LLM directly whether the label is compliant.
+- **Why:** agents and auditors need to see *why* something failed (the label value next to the application value, and the rule applied). Rules written as code are unit-testable, give the same answer every time, and don't hallucinate a pass. This also answers Dave's concern ("you need judgment"): normalization rules encode the judgment explicitly (case, punctuation, whitespace), and anything uncertain becomes **Needs review** instead of a silent pass or fail.
+- **Tradeoff:** rules must be written by hand and won't cover every edge case, so we default to "Needs review" when unsure.
+
+### D2: Python + FastAPI backend (2026-09-26)
+- **Alternatives:** .NET (matches COLA), Next.js full-stack.
+- **Why:** Python has the best imaging/OCR ecosystem (Pillow, OpenCV, Tesseract bindings) and first-class LLM SDKs. FastAPI is async, so batch jobs can call the model concurrently, which matters for R2 (5s) and R8 (batch). Auto-generated OpenAPI docs make the service easy to integrate later. It's also the fastest stack for the developer.
+- **Tradeoff:** it doesn't match their .NET estate. Mitigation: it's a standalone service behind an HTTP API (Marcus: no COLA integration), so the language is irrelevant to any future integration.
+
+### D3: Pluggable extraction providers: Claude vision primary, local OCR fallback (2026-09-26)
+- **Alternatives:** vision LLM only; local OCR only.
+- **Why:** a vision LLM is far better at messy photos (R9), layout, and visually judging bold/all-caps on the warning header (R4), which OCR can't do reliably. But Marcus warned that their **firewall blocks many outbound ML endpoints**, which is what killed the last vendor. So extraction sits behind an interface: the LLM provider is swappable (for example, Azure OpenAI / Azure AI Foundry inside their tenant), and a local Tesseract provider works fully offline in degraded mode.
+- **Tradeoff:** two code paths to maintain. OCR mode can't verify boldness, so it flags that check as "Needs review" instead of guessing. Using the Anthropic API directly in the prototype is a convenience; production would route through an approved endpoint.
+
+### D4: Host on Azure (2026-09-26)
+- **Alternatives:** Render, Vercel, or Fly (faster setup, less relevant).
+- **Why:** Treasury/TTB migrated to Azure in 2019 and went through FedRAMP there (Marcus). A prototype already on Azure shows a realistic path to adoption: same cloud, same identity and network controls, Azure Government available for production. The developer also has prior Azure experience.
+- **Tradeoff:** more setup than a one-click PaaS, and cold starts on lower tiers could threaten the 5s target, so we pick a tier/config that keeps an instance warm.
+
+### D5: Secrets via environment variables (2026-09-26)
+- Local: `.env` (gitignored), with `.env.example` committed. Azure: App Settings (Key Vault reference if time allows). Nothing secret in the repo, per Marcus: "just don't do anything crazy."
+
+### D6: Prioritization (2026-09-26)
+- No hard time budget, but the order is **core single-label check → tests → deploy → batch → image-quality handling → polish**, per the spec: "a working core application with clean code is preferred over ambitious but incomplete features."
