@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Label Verification | TTB Prototype</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header class="site-header">
+    <div class="wrap">
+      <h1>Label Verification</h1>
+      <p class="tagline">Check a label image against its application in a few seconds.</p>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+    <form id="verify-form" novalidate>
+      <section class="step" aria-labelledby="step1-title">
+        <h2 id="step1-title"><span class="step-num" aria-hidden="true">1</span> Upload the label image</h2>
+        <label id="dropzone" class="dropzone" for="image">
+          <input id="image" name="image" type="file" accept="image/jpeg,image/png,image/webp" required>
+          <span id="dropzone-text">
+            <strong>Click here to choose a photo</strong><br>
+            or drag and drop it here (JPG or PNG)
+          </span>
+          <img id="preview" alt="Preview of the uploaded label" hidden>
+        </label>
+      </section>
+
+      <section class="step" aria-labelledby="step2-title">
+        <h2 id="step2-title"><span class="step-num" aria-hidden="true">2</span> Enter what the application says</h2>
+
+        <fieldset class="bev-type">
+          <legend>Type of beverage</legend>
+          <label><input type="radio" name="beverage_type" value="spirits" checked> Distilled spirits</label>
+          <label><input type="radio" name="beverage_type" value="wine"> Wine</label>
+          <label><input type="radio" name="beverage_type" value="beer"> Beer / malt beverage</label>
+        </fieldset>
+
+        <div class="fields">
+          <label>Brand name <span class="req">(required)</span>
+            <input name="brand_name" required autocomplete="off" placeholder="e.g. OLD TOM DISTILLERY">
+          </label>
+          <label>Class / type <span class="req">(required)</span>
+            <input name="class_type" required autocomplete="off" placeholder="e.g. Kentucky Straight Bourbon Whiskey">
+          </label>
+          <label>Alcohol content <span id="abv-hint" class="req">(required for spirits)</span>
+            <input name="alcohol_content" autocomplete="off" placeholder="e.g. 45% Alc./Vol. (90 Proof)">
+          </label>
+          <label>Net contents <span class="req">(required)</span>
+            <input name="net_contents" required autocomplete="off" placeholder="e.g. 750 mL">
+          </label>
+        </div>
+
+        <details class="more">
+          <summary>More fields (optional)</summary>
+          <div class="fields">
+            <label>Bottler / producer name and address
+              <input name="bottler_name_address" autocomplete="off" placeholder="e.g. Bottled by Old Tom Distillery, Bardstown, KY">
+            </label>
+            <label>Country of origin (imports only)
+              <input name="country_of_origin" autocomplete="off" placeholder="e.g. Scotland">
+            </label>
+          </div>
+        </details>
+      </section>
+
+      <div id="form-error" class="alert alert-error" role="alert" hidden></div>
+
+      <button id="submit" type="submit" class="btn-primary">Check label</button>
+      <p id="loading" class="loading" role="status" aria-live="polite" hidden>
+        <span class="spinner" aria-hidden="true"></span> Checking the label. This usually takes a few seconds…
+      </p>
+
+      <details class="settings">
+        <summary>Settings</summary>
+        <fieldset>
+          <legend>How to read the label</legend>
+          <label><input type="radio" name="provider" value="" checked> Standard (AI vision, most accurate)</label>
+          <label><input type="radio" name="provider" value="ocr"> Offline text recognition (works without internet access; can't check bold type)</label>
+        </fieldset>
+      </details>
+    </form>
+
+    <section id="results" class="results" aria-live="polite" hidden>
+      <div id="verdict" class="verdict" tabindex="-1"></div>
+      <table class="result-table">
+        <caption class="visually-hidden">Field-by-field results</caption>
+        <thead>
+          <tr><th scope="col">Item</th><th scope="col">Result</th><th scope="col">Application says</th><th scope="col">Label says</th></tr>
+        </thead>
+        <tbody id="result-rows"></tbody>
+      </table>
+      <p id="meta" class="meta"></p>
+      <button id="again" type="button" class="btn-secondary">Check another label</button>
+    </section>
+  </main>
+
+  <footer class="wrap footer">
+    Prototype for evaluation. Uploaded images and data are not stored. Results support, not replace, agent review.
+  </footer>
+  <script src="/static/app.js"></script>
+</body>
+</html>
