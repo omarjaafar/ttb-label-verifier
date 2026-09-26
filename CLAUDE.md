@@ -9,7 +9,7 @@ Build an **AI-powered alcohol label verification app** for TTB (Alcohol and Toba
 
 - Full spec, copied verbatim: [docs/ASSIGNMENT.md](docs/ASSIGNMENT.md) (source: https://github.com/treasurytakehome-rgb/instructions)
 - Questions go to take-home-test@treasury.gov. They also value "how you fill in gaps independently." Record our assumptions instead of asking about everything.
-- Submission: Microsoft Form (repo URL + deployed URL). **Assessment received 2026-09-14 → due 2026-09-21 (one week). Already past due as of 2026-09-26: finish and submit ASAP.**
+- Submission: Microsoft Form (repo URL + deployed URL). Assessment received 2026-09-14; due within one week.
 - AI use is allowed and **is itself being evaluated**.
 
 ## Deliverables (hard requirements)
