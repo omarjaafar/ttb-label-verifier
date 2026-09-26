@@ -19,6 +19,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; } /* keep `hidden` working on flex/grid elements */
 
 body {
   margin: 0;
@@ -138,3 +139,33 @@ details.settings fieldset { display: grid; gap: 8px; margin-top: 8px; }
   .result-table td { display: block; border: none; padding: 6px 16px; }
   .result-table td[data-label]::before { content: attr(data-label) ": "; font-weight: 600; font-family: inherit; }
 }
+
+/* --- Mode tabs --- */
+.mode-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+.mode-tabs button {
+  flex: 1; font: inherit; font-weight: 700; padding: 14px 20px; min-height: 56px; cursor: pointer;
+  border: 3px solid var(--primary); border-radius: 8px; background: #fff; color: var(--primary);
+}
+.mode-tabs button[aria-selected="true"] { background: var(--primary); color: #fff; }
+
+/* --- Batch --- */
+.file-row input { font: inherit; }
+.alert-warning { background: var(--review-bg); color: var(--review); border-color: var(--review); }
+.batch-progress { background: var(--surface); border: 1px solid #dfe1e2; border-radius: 8px; padding: 16px 24px; margin: 20px 0; }
+.batch-progress p { font-weight: 600; margin: 0 0 10px; }
+.batch-progress progress { width: 100%; height: 28px; accent-color: var(--primary); }
+.tally { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.tally-item { border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; font-weight: 600; border-left: 8px solid; }
+.tally-num { font-size: 2rem; line-height: 1.1; }
+.tally-item.pass { background: var(--pass-bg); color: var(--pass); }
+.tally-item.review { background: var(--review-bg); color: var(--review); }
+.tally-item.fail { background: var(--fail-bg); color: var(--fail); }
+.tally-item.error { background: var(--na-bg); color: var(--na); }
+.batch-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.batch-actions .btn-secondary { margin-top: 0; }
+.batch-item { background: var(--surface); border: 1px solid #dfe1e2; border-radius: 8px; margin-bottom: 8px; }
+.batch-item summary { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--text); font-weight: 400; flex-wrap: wrap; }
+.batch-name { font-weight: 700; }
+.batch-reason { color: var(--muted); font-size: 1rem; flex-basis: 100%; }
+.batch-item .result-table { border-top: 1px solid #dfe1e2; border-radius: 0; }
+@media (max-width: 720px) { .tally { grid-template-columns: repeat(2, 1fr); } }

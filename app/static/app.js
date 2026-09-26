@@ -100,6 +100,21 @@ function escapeHtml(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
+function badgeHtml(status) {
+  const st = STATUS[status] || STATUS.fail;
+  const cls = status === "n/a" ? "na" : status;
+  return `<span class="badge ${cls}"><span aria-hidden="true">${st.icon}</span> ${st.word}</span>`;
+}
+
+function fieldRowsHtml(fields) {
+  return fields.map((f) => `<tr>
+      <td class="item">${escapeHtml(f.label)}<span class="note">${escapeHtml(f.message)}</span></td>
+      <td data-label="Result">${badgeHtml(f.status)}</td>
+      <td data-label="Application" class="value">${escapeHtml(f.expected ?? "—")}</td>
+      <td data-label="Label" class="value">${escapeHtml(f.found ?? "—")}</td>
+    </tr>`).join("");
+}
+
 function renderResults(r) {
   const s = STATUS[r.overall];
   const verdict = $("verdict");
@@ -107,16 +122,7 @@ function renderResults(r) {
   verdict.innerHTML = `<span class="icon" aria-hidden="true">${s.icon}</span>
     <div><h2>${s.title}</h2><p>${escapeHtml(r.summary)}</p></div>`;
 
-  $("result-rows").innerHTML = r.fields.map((f) => {
-    const st = STATUS[f.status];
-    const cls = f.status === "n/a" ? "na" : f.status;
-    return `<tr>
-      <td class="item">${escapeHtml(f.label)}<span class="note">${escapeHtml(f.message)}</span></td>
-      <td data-label="Result"><span class="badge ${cls}"><span aria-hidden="true">${st.icon}</span> ${st.word}</span></td>
-      <td data-label="Application" class="value">${escapeHtml(f.expected ?? "—")}</td>
-      <td data-label="Label" class="value">${escapeHtml(f.found ?? "—")}</td>
-    </tr>`;
-  }).join("");
+  $("result-rows").innerHTML = fieldRowsHtml(r.fields);
   $("result-rows").closest("table").hidden = r.fields.length === 0;
 
   $("meta").textContent = `Checked in ${(r.elapsed_ms / 1000).toFixed(1)} seconds using ${r.provider === "ocr" ? "offline text recognition" : "AI vision"}.`;
@@ -133,3 +139,18 @@ $("again").addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
   imageInput.focus();
 });
+
+// --- Mode tabs --------------------------------------------------------------------
+
+function selectTab(which) {
+  const single = which === "single";
+  $("tab-single").setAttribute("aria-selected", String(single));
+  $("tab-batch").setAttribute("aria-selected", String(!single));
+  $("single-view").hidden = !single;
+  $("batch-view").hidden = single;
+}
+$("tab-single").addEventListener("click", () => selectTab("single"));
+$("tab-batch").addEventListener("click", () => selectTab("batch"));
+
+// Shared with batch.js
+window.labelUi = { STATUS, escapeHtml, badgeHtml, fieldRowsHtml };

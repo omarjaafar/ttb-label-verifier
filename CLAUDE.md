@@ -154,3 +154,9 @@ Format: **decision**, then the alternatives considered, why this one, and the tr
 - **Alternatives:** Opus 5 (adaptive thinking), Haiku 4.5.
 - **Why:** Sarah's hard bar is about 5s ("nobody's going to use it" otherwise; the last vendor failed at 30–40s). On our samples, Sonnet 5 with thinking off was the only config that was **both** 9/9 accurate **and** consistently under 5s (~3.6s single, ~4.1s at 9 concurrent). Opus 5 was equally accurate but ranged 4–6s. Haiku was fast on average but spiky (up to 7.7s). The task is transcription, not reasoning (the rules engine does the judging), so extra model deliberation buys little. Sonnet is also cheaper per label, which matters at 150k labels/year.
 - **Tradeoff:** less headroom on very hard images. Mitigations: model and thinking are env settings (`CLAUDE_MODEL`, `CLAUDE_THINKING`), and unreadable images come back as "Needs review" rather than a guess.
+
+### D11: Batch runs in the browser, one request per label, 3 at a time (2026-09-26)
+- **Alternatives:** one multipart upload of all images plus a server-side job queue; the Anthropic Message Batches API (50% cheaper, but asynchronous with up to 24h turnaround).
+- **Why:** 300 phone photos can approach 1 GB, too much for a single request. Per-label requests reuse the tested `/api/verify` endpoint, give true progress, isolate failures (retry with backoff on 429/5xx), and keep the server **stateless**: no job store and nothing persisted (Marcus: no sensitive storage). Concurrency 3 stays under entry-tier API rate limits (~50 req/min).
+- **Measured:** 9 labels in ~11s through the UI (headless Edge test), all verdicts correct.
+- **Tradeoff:** the tab must stay open during a batch, and 300 labels take ~7 min at concurrency 3. Production would raise the rate-limit tier or concurrency; Message Batches fits overnight bulk runs.

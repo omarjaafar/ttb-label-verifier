@@ -16,6 +16,12 @@
   </header>
 
   <main id="main" class="wrap">
+    <div class="mode-tabs" role="tablist" aria-label="How many labels">
+      <button id="tab-single" role="tab" aria-selected="true" aria-controls="single-view">One label</button>
+      <button id="tab-batch" role="tab" aria-selected="false" aria-controls="batch-view">Many labels at once</button>
+    </div>
+
+    <div id="single-view" role="tabpanel" aria-labelledby="tab-single">
     <form id="verify-form" novalidate>
       <section class="step" aria-labelledby="step1-title">
         <h2 id="step1-title"><span class="step-num" aria-hidden="true">1</span> Upload the label image</h2>
@@ -96,11 +102,54 @@
       <p id="meta" class="meta"></p>
       <button id="again" type="button" class="btn-secondary">Check another label</button>
     </section>
+    </div>
+
+    <div id="batch-view" role="tabpanel" aria-labelledby="tab-batch" hidden>
+      <form id="batch-form" novalidate>
+        <section class="step" aria-labelledby="b1-title">
+          <h2 id="b1-title"><span class="step-num" aria-hidden="true">1</span> Choose all the label images</h2>
+          <label class="dropzone" id="batch-dropzone" for="batch-images">
+            <input id="batch-images" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+            <span id="batch-images-text"><strong>Click here to choose label images</strong><br>You can select many at once, or drag them here</span>
+          </label>
+        </section>
+
+        <section class="step" aria-labelledby="b2-title">
+          <h2 id="b2-title"><span class="step-num" aria-hidden="true">2</span> Choose the application spreadsheet (CSV)</h2>
+          <p>One row per label. The <strong>filename</strong> column must match the image file name.
+            <a href="/static/batch_template.csv" download>Download a blank template</a>.</p>
+          <label class="file-row" for="batch-csv">
+            <input id="batch-csv" type="file" accept=".csv,text/csv">
+          </label>
+        </section>
+
+        <div id="batch-error" class="alert alert-error" role="alert" hidden></div>
+        <div id="batch-warning" class="alert alert-warning" role="status" hidden></div>
+        <button id="batch-submit" type="submit" class="btn-primary">Check all labels</button>
+      </form>
+
+      <section id="batch-progress" class="batch-progress" hidden>
+        <p id="batch-progress-text" role="status" aria-live="polite"></p>
+        <progress id="batch-progress-bar" max="1" value="0"></progress>
+        <button id="batch-cancel" type="button" class="btn-secondary">Stop</button>
+      </section>
+
+      <section id="batch-results" class="results" hidden>
+        <div class="tally" id="batch-tally"></div>
+        <div class="batch-actions">
+          <button id="batch-download" type="button" class="btn-secondary">Download results (CSV)</button>
+          <button id="batch-again" type="button" class="btn-secondary">Start a new batch</button>
+        </div>
+        <p class="meta">Problems are listed first. Click a row to see details.</p>
+        <div id="batch-list"></div>
+      </section>
+    </div>
   </main>
 
   <footer class="wrap footer">
     Prototype for evaluation. Uploaded images and data are not stored. Results support, not replace, agent review.
   </footer>
   <script src="/static/app.js"></script>
+  <script src="/static/batch.js"></script>
 </body>
 </html>
