@@ -149,3 +149,8 @@ Format: **decision**, then the alternatives considered, why this one, and the tr
 | Opus 5, low effort, adaptive thinking | 9/9 (after bottler fix) | 4.1–5.8s single |
 | **Sonnet 5, low effort, thinking off** | **9/9** | **~3.6s single, ~4.1s with 9 concurrent** |
 | Haiku 4.5 | correct | 3.8–7.7s (inconsistent) |
+
+### D10: Default model = Claude Sonnet 5, thinking disabled, low effort (2026-09-26)
+- **Alternatives:** Opus 5 (adaptive thinking), Haiku 4.5.
+- **Why:** Sarah's hard bar is about 5s ("nobody's going to use it" otherwise; the last vendor failed at 30–40s). On our samples, Sonnet 5 with thinking off was the only config that was **both** 9/9 accurate **and** consistently under 5s (~3.6s single, ~4.1s at 9 concurrent). Opus 5 was equally accurate but ranged 4–6s. Haiku was fast on average but spiky (up to 7.7s). The task is transcription, not reasoning (the rules engine does the judging), so extra model deliberation buys little. Sonnet is also cheaper per label, which matters at 150k labels/year.
+- **Tradeoff:** less headroom on very hard images. Mitigations: model and thinking are env settings (`CLAUDE_MODEL`, `CLAUDE_THINKING`), and unreadable images come back as "Needs review" rather than a guess.
