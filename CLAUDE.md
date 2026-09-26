@@ -171,3 +171,7 @@ Format: **decision**, then the alternatives considered, why this one, and the tr
 - **Alternatives:** OpenCV deskew / perspective correction / glare removal / contrast enhancement before extraction.
 - **Why:** the vision model already handled the rotated, blurred, glare-affected sample correctly (09_angled_glare_photo → pass). Classic preprocessing tuned for OCR can *hurt* a vision model (over-sharpening, and cropping errors that cut off the warning), and it adds latency against the 5s bar. We do the safe, cheap steps (EXIF auto-rotate, downscale to 1568px) and have the model report `image_readable` / `image_quality_note`, so a bad photo comes back as **Needs review: request a clearer image** instead of a guess. That's the honest version of Jenny's "maybe out of scope" ask.
 - **Tradeoff:** very poor photos are still rejected to the agent rather than rescued. Preprocessing stays an option for the OCR fallback path only, where it helps more.
+
+### D14: Capture the warning heading verbatim in its own field (2026-09-26)
+- **Found:** reviewing a screenshot showed the model "correcting" a title-case heading to caps inside the full-warning transcription (6/8 runs). The caps verdict was still right via the separate boolean, but the display contradicted it.
+- **Fix:** a `heading_as_printed` schema field with an explicit title-case example, asked *before* the booleans. The heading rule fails if either the transcription or the visual judgment says "not all caps." Result: 10/10 verbatim. Full eval is still 11/11, median 4.2s.
