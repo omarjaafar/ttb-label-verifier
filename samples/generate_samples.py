@@ -35,7 +35,7 @@ def centered(draw, y, text, f, fill="#2b1a0e", width=900):
 
 
 def make_label(brand, class_type, abv, net, bottler, heading="GOVERNMENT WARNING:", heading_bold=True,
-               body=WARNING_BODY, country=None, bg="#f4ead5"):
+               body=WARNING_BODY, country=None, bg="#f4ead5", include_warning=True):
     W, H = 900, 1200
     img = Image.new("RGB", (W, H), bg)
     d = ImageDraw.Draw(img)
@@ -58,6 +58,9 @@ def make_label(brand, class_type, abv, net, bottler, heading="GOVERNMENT WARNING
     y += 30
     for line in textwrap.wrap(bottler, 50):
         y = centered(d, y, line, font(False, 24))
+
+    if not include_warning:
+        return img
 
     # Government warning block
     y = H - 330
@@ -112,6 +115,15 @@ CASES = {
         {"brand_name": "Chateau Bellevue", "class_type": "Bordeaux Red Wine", "alcohol_content": "13.5%",
          "net_contents": "750 mL", "bottler_name_address": "Bellevue Imports, New York, NY",
          "country_of_origin": "France", "beverage_type": "wine"},
+        "pass",
+    ),
+    "10_missing_warning.jpg": ({"include_warning": False}, {}, "fail"),
+    "11_beer_no_abv.jpg": (
+        {"brand": "RIVER BEND BREWING", "class_type": "India Pale Ale", "abv": "", "net": "12 FL. OZ.",
+         "bottler": "Brewed and canned by River Bend Brewing Co., Portland, Oregon", "bg": "#e6f0e6"},
+        {"brand_name": "River Bend Brewing", "class_type": "India Pale Ale", "alcohol_content": "",
+         "net_contents": "12 fl oz", "bottler_name_address": "River Bend Brewing Co., Portland, Oregon",
+         "beverage_type": "beer"},
         "pass",
     ),
 }

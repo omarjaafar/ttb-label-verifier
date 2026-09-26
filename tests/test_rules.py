@@ -105,6 +105,22 @@ def test_warning_title_case_heading_fails():
     assert "capital" in r.message
 
 
+def test_warning_heading_uses_printed_heading():
+    obs = WarningObservation(present=True, heading_as_printed="Government Warning:", text=GOVERNMENT_WARNING,
+                             heading_all_caps=None, heading_bold=True)
+    r = rules.check_warning_heading(obs)
+    assert r.status == Status.FAIL
+    assert r.found == "Government Warning:"
+
+
+def test_warning_heading_fails_if_model_says_not_caps_even_when_text_is_caps():
+    # Models sometimes "correct" transcribed text; the visual judgment still wins, and we don't show contradictory text.
+    obs = GOOD_WARNING.model_copy(update={"heading_as_printed": "GOVERNMENT WARNING:", "heading_all_caps": False})
+    r = rules.check_warning_heading(obs)
+    assert r.status == Status.FAIL
+    assert "Not all capital" in r.found
+
+
 def test_warning_not_bold_fails():
     obs = GOOD_WARNING.model_copy(update={"heading_bold": False})
     assert rules.check_warning_heading(obs).status == Status.FAIL

@@ -56,6 +56,7 @@ def parse_ocr_text(text: str) -> ExtractedLabel:
         net_contents=vol_m.group(0).strip() if vol_m else None,
         government_warning=WarningObservation(
             present=warning_m is not None,
+            heading_as_printed=warning_text[: len("GOVERNMENT WARNING:")] if warning_text else None,
             text=warning_text,
             heading_all_caps=warning_text.startswith("GOVERNMENT WARNING") if warning_text else None,
             heading_bold=None,

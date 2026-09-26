@@ -26,6 +26,9 @@ class ApplicationData(BaseModel):
 
 class WarningObservation(BaseModel):
     present: bool
+    # The heading exactly as printed (e.g. "Government Warning:"), captured separately because models
+    # tend to "correct" capitalization inside longer transcriptions.
+    heading_as_printed: str | None = None
     text: str | None = None
     heading_all_caps: bool | None = None
     heading_bold: bool | None = None

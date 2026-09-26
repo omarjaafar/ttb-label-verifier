@@ -7,4 +7,6 @@ filename,brand_name,class_type,alcohol_content,net_contents,bottler_name_address
 06_reworded_warning.jpg,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,45% Alc./Vol. (90 Proof),750 mL,"Old Tom Distillery, Bardstown, Kentucky",,spirits,fail
 07_wrong_net_contents.jpg,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,45% Alc./Vol. (90 Proof),750 mL,"Old Tom Distillery, Bardstown, Kentucky",,spirits,fail
 08_import_wine.jpg,Chateau Bellevue,Bordeaux Red Wine,13.5%,750 mL,"Bellevue Imports, New York, NY",France,wine,pass
+10_missing_warning.jpg,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,45% Alc./Vol. (90 Proof),750 mL,"Old Tom Distillery, Bardstown, Kentucky",,spirits,fail
+11_beer_no_abv.jpg,River Bend Brewing,India Pale Ale,,12 fl oz,"River Bend Brewing Co., Portland, Oregon",,beer,pass
 09_angled_glare_photo.jpg,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,45% Alc./Vol. (90 Proof),750 mL,"Old Tom Distillery, Bardstown, Kentucky",,spirits,pass

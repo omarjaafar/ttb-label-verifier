@@ -30,11 +30,12 @@ _SCHEMA = {
             "type": "object",
             "properties": {
                 "present": {"type": "boolean"},
+                "heading_as_printed": _NULLABLE_STR,
                 "text": _NULLABLE_STR,
                 "heading_all_caps": _NULLABLE_BOOL,
                 "heading_bold": _NULLABLE_BOOL,
             },
-            "required": ["present", "text", "heading_all_caps", "heading_bold"],
+            "required": ["present", "heading_as_printed", "text", "heading_all_caps", "heading_bold"],
             "additionalProperties": False,
         },
     },
@@ -66,10 +67,14 @@ Fields:
 - net_contents: e.g., "750 mL", "12 FL OZ".
 - bottler_name_address: the "bottled by / produced by / imported by" name and address line.
 - country_of_origin: only if stated (e.g., "Product of Scotland").
-- government_warning: whether the health warning is present; its full text verbatim, preserving \
-the exact capitalization of the "GOVERNMENT WARNING:" heading; whether that heading is entirely \
-in capital letters; and whether that heading is visibly bold (heavier stroke than surrounding text). \
-Use null for heading_bold if you genuinely cannot tell.
+- government_warning: whether the health warning is present, and:
+  - heading_as_printed: the warning's heading copied letter-for-letter with its exact letter case. \
+Labels are often non-compliant here, so do not normalize: if it is printed "Government Warning:", write \
+"Government Warning:", not "GOVERNMENT WARNING:". Look closely at each letter.
+  - text: the full warning verbatim, starting with the heading exactly as in heading_as_printed.
+  - heading_all_caps: true only if every letter of the printed heading is uppercase.
+  - heading_bold: whether the heading is visibly bold (heavier stroke than the surrounding text); \
+null if you genuinely cannot tell.
 - image_readable: false only if the image is too blurry, dark, glared, or angled to read the label.
 - image_quality_note: a short note if glare, angle, blur, or cropping affected reading. Otherwise null."""
 

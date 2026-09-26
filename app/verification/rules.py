@@ -186,10 +186,14 @@ def check_warning_heading(obs: WarningObservation, can_judge_bold: bool = True) 
         return FieldResult(field=field, label=label, status=Status.FAIL, expected=WARNING_HEADING,
                            message="No government warning on the label.")
 
-    found_heading = clean_whitespace(obs.text or "")[: len(WARNING_HEADING)] or None
-    base = dict(field=field, label=label, expected=WARNING_HEADING, found=found_heading)
-    caps_ok = (found_heading == WARNING_HEADING) if found_heading else obs.heading_all_caps
+    printed = clean_whitespace(obs.heading_as_printed or "") or clean_whitespace(obs.text or "")[: len(WARNING_HEADING)]
+    base = dict(field=field, label=label, expected=WARNING_HEADING, found=printed or None)
+    # Conservative: fail if EITHER the transcription or the model's visual judgment says "not all caps".
+    caps_ok = (printed == WARNING_HEADING) if printed else obs.heading_all_caps
     if caps_ok is False or obs.heading_all_caps is False:
+        if caps_ok and obs.heading_all_caps is False:
+            # The model "corrected" the text but judged it not all caps; don't show contradictory text.
+            base["found"] = "Not all capital letters (as seen on the label)"
         return FieldResult(**base, status=Status.FAIL,
                            message='"GOVERNMENT WARNING:" must be in all capital letters.')
     if caps_ok is None:
