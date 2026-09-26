@@ -9,7 +9,7 @@ Build an **AI-powered alcohol label verification app** for TTB (Alcohol and Toba
 
 - Full spec, copied verbatim: [docs/ASSIGNMENT.md](docs/ASSIGNMENT.md) (source: https://github.com/treasurytakehome-rgb/instructions)
 - Questions go to take-home-test@treasury.gov. They also value "how you fill in gaps independently." Record our assumptions instead of asking about everything.
-- Submission: Microsoft Form (repo URL + deployed URL). **Deadline: one week from receipt. TODO: fill in exact date.**
+- Submission: Microsoft Form (repo URL + deployed URL). **Assessment received 2026-09-14 → due 2026-09-21 (one week). Already past due as of 2026-09-26: finish and submit ASAP.**
 - AI use is allowed and **is itself being evaluated**.
 
 ## Deliverables (hard requirements)
@@ -78,7 +78,7 @@ Rough pipeline:
 4. **Report:** per-field ✅ / ⚠️ / ❌, showing the label value next to the application value, with an overall verdict
 
 ### Open decisions (ask the user before building)
-- [ ] **Image-quality handling:** preprocessing (deskew/contrast) vs. just detecting and flagging low confidence
+_None open. All resolved in the Decisions log._
 
 ## How we're working
 
@@ -166,3 +166,8 @@ Format: **decision**, then the alternatives considered, why this one, and the tr
 - **Verified live:** health, single label (3.9s), 9-label batch in 12s through headless Edge, all verdicts correct. Round trip including upload is 4.2–5.2s.
 - **Redeploy:** `docker build -t ca99e736d0b5acr.azurecr.io/ttb-label-verifier:vN .` → `az acr login -n ca99e736d0b5acr` → `docker push …:vN` → `az containerapp update -n ttb-label-verifier -g rg-ttb-label-verifier --image …:vN`.
 - **Cost:** roughly $10–15/month (ACR Basic + one always-on replica), well within the $100 student credit. Tear down after review with `az group delete -n rg-ttb-label-verifier`.
+
+### D13: No custom image preprocessing; rely on the vision model and flag unreadable images (2026-09-26)
+- **Alternatives:** OpenCV deskew / perspective correction / glare removal / contrast enhancement before extraction.
+- **Why:** the vision model already handled the rotated, blurred, glare-affected sample correctly (09_angled_glare_photo → pass). Classic preprocessing tuned for OCR can *hurt* a vision model (over-sharpening, and cropping errors that cut off the warning), and it adds latency against the 5s bar. We do the safe, cheap steps (EXIF auto-rotate, downscale to 1568px) and have the model report `image_readable` / `image_quality_note`, so a bad photo comes back as **Needs review: request a clearer image** instead of a guess. That's the honest version of Jenny's "maybe out of scope" ask.
+- **Tradeoff:** very poor photos are still rejected to the agent rather than rescued. Preprocessing stays an option for the OCR fallback path only, where it helps more.
